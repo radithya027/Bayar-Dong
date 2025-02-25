@@ -522,3 +522,8 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])
 Route::middleware(['auth'])->group(function () {
     Route::post('/subscription/pay-midtrans', [SubscriptionController::class, 'pay_midtrans'])->name('subscription.pay.midtrans');
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/paymidtrans/{transactionId}', [SellPosController::class, 'paymidtrans'])->name('subscription.pay.midtrans');
+    Route::get('/snap-view/{transactionId}', [SellPosController::class, 'snapView'])->name('snap.view');
+});

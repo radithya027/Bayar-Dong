@@ -32,9 +32,9 @@
 					@endif" alt="Product image" class="product-thumbnail-small" style="float: left; margin-right: 8px;">
 		@if( ($edit_price || $edit_discount) && empty($is_direct_sell) )
 		<div title="@lang('lang_v1.pos_edit_product_price_help')" style="display: inline">
-		<span class="text-link text-info cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal_{{$row_count}}">
-			{!! $product_name !!}
-			&nbsp;<i class="fa fa-info-circle"></i>
+		<span class="text-link tw-text-[#646EE4] cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal_{{$row_count}}">
+			{!! $product_name !!} sdfdsfds
+			&nbsp;<i class="fa fa-info-circle tw-text-[#646EE4]"></i>
 		</span>
 		</div>
 		@else

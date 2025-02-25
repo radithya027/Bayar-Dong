@@ -64,6 +64,8 @@ use Stripe\Stripe;
 use Yajra\DataTables\Facades\DataTables;
 use App\Events\SellCreatedOrModified;
 use Illuminate\Support\Facades\Log;
+use Midtrans;
+
 
 class SellPosController extends Controller
 {
@@ -125,11 +127,11 @@ class SellPosController extends Controller
         ];
 
         // Konfigurasi Midtrans
-        \Midtrans\Config::$serverKey = config('midtrans.server_key');
-        \Midtrans\Config::$clientKey = config('midtrans.client_key');
-        \Midtrans\Config::$isProduction = false;
-        \Midtrans\Config::$isSanitized = true;
-        \Midtrans\Config::$is3ds = true;
+        Midtrans\Config::$serverKey = config('midtrans.server_key');
+        Midtrans\Config::$clientKey = config('midtrans.client_key');
+        Midtrans\Config::$isProduction = config('midtrans.isProduction', false);
+        Midtrans\Config::$isSanitized = true;
+        Midtrans\Config::$is3ds = true;
     }
 
     /**
@@ -137,151 +139,148 @@ class SellPosController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    public function paymidtrans($transactionId)
+    {
+        try {
+            // Cari transaksi berdasarkan ID
+            $transaction = Transaction::find($transactionId);
+            if (!$transaction) {
+                return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
+            }
 
+            // Pastikan user login
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
 
+            // Pastikan total pembayaran valid
+            $total_payable = (int) round($transaction->final_total);
+            if ($total_payable <= 0) {
+                return response()->json(['success' => false, 'message' => 'Invalid transaction amount'], 400);
+            }
 
-     public function paymidtrans($transactionId)
-     {
-         try {
-             // Cari transaksi berdasarkan ID
-             $transaction = Transaction::find($transactionId);
-             if (!$transaction) {
-                 return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
-             }
- 
-             // Ambil user yang sedang login
-             $user = auth('api')->user();
-             if (!$user) {
-                 return response()->json(['error' => 'Unauthorized'], 401);
-             }
- 
-             // Ambil jumlah pembayaran dari transaksi
-             $total_payable = (int) $transaction->final_total;
- 
-             // Generate order ID unik
-             $order_id = 'ORDER-' . time() . '-' . $transaction->business->id;
- 
-             // Metode pembayaran yang tersedia di Midtrans
-             $enabled_payments = [
-                 'credit_card',
-                 'bca_va',
-                 'bni_va',
-                 'bri_va',
-                 'mandiri_va',
-                 'permata_va',
-                 'gopay',
-                 'shopeepay'
-             ];
- 
-             // Persiapan data transaksi untuk Midtrans
-             $payment_data = [
-                 'transaction_details' => [
-                     'order_id' => $order_id,
-                     'gross_amount' => $total_payable,
-                 ],
-                 'customer_details' => [
-                     'first_name' => $user->username ?? 'Customer',
-                     'email' => $user->email ?? '',
-                 ],
-                 'enabled_payments' => $enabled_payments,
-                 'credit_card' => [
-                     'secure' => true,
-                     'channel' => 'migs',
-                 ],
-             ];
- 
-             // Generate Snap Token dari Midtrans
-             $snap_token = \Midtrans\Snap::getSnapToken($payment_data);
- 
-             return response()->json([
-                 'success' => true,
-                 'data' => [
-                     'snap_token' => $snap_token,
-                     'redirect_url' => config('midtrans.isProduction')
-                         ? 'https://app.midtrans.com/snap/v2/vtweb/' . $snap_token
-                         : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snap_token,
-                     'transaction_id' => $transaction->id,
-                     'order_id' => $order_id
-                 ]
-             ]);
-         } catch (\Exception $e) {
-             return response()->json([
-                 'success' => false,
-                 'error' => 'Payment initialization failed',
-                 'message' => $e->getMessage()
-             ], 500);
-         }
-     }
- 
-     public function snapView($transactionId)
-     {
-         try {
-             // Ambil user yang sedang login
-             $user = auth('api')->user();
-             if (!$user) {
-                 return response()->json(['error' => 'Unauthorized'], 401);
-             }
- 
-             // Cari transaksi berdasarkan ID
-             $transaction = Transaction::find($transactionId);
-             if (!$transaction) {
-                 return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
-             }
- 
-             // Metode pembayaran yang tersedia
-             $enabled_payments = [
-                 'credit_card',
-                 'bca_va',
-                 'bni_va',
-                 'bri_va',
-                 'mandiri_va',
-                 'permata_va',
-                 'gopay',
-                 'shopeepay'
-             ];
- 
-             // Persiapan data untuk Midtrans
-             $params = [
-                 'transaction_details' => [
-                     'order_id' => $transaction->payment_transaction_id,
-                     'gross_amount' => (int) $transaction->final_total,
-                 ],
-                 'customer_details' => [
-                     'first_name' => $user->username ?? 'Customer',
-                     'email' => $user->email ?? '',
-                 ],
-                 'enabled_payments' => $enabled_payments,
-                 'credit_card' => [
-                     'secure' => true,
-                     'channel' => 'migs',
-                 ],
-             ];
- 
-             // Generate Snap Token
-             $snapToken = \Midtrans\Snap::getSnapToken($params);
- 
-             return response()->json([
-                 'success' => true,
-                 'data' => [
-                     'snap_token' => $snapToken,
-                     'transaction' => $transaction,
-                     'redirect_url' => config('midtrans.isProduction')
-                         ? 'https://app.midtrans.com/snap/v2/vtweb/' . $snapToken
-                         : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snapToken,
-                 ]
-             ]);
-         } catch (\Exception $e) {
-             return response()->json([
-                 'success' => false,
-                 'error' => 'Failed to load payment data',
-                 'message' => $e->getMessage()
-             ], 500);
-         }
-     }
+            // Order ID unik berdasarkan ID transaksi
+            $order_id = 'ORDER-' . $transaction->id;
 
+            // Metode pembayaran yang tersedia
+            $enabled_payments = [
+                'credit_card', 'bca_va', 'bni_va', 'bri_va',
+                'mandiri_va', 'permata_va', 'gopay', 'shopeepay'
+            ];
 
+            // Data transaksi untuk Midtrans
+            $payment_data = [
+                'transaction_details' => [
+                    'order_id' => $order_id,
+                    'gross_amount' => $total_payable,
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name ?? 'Customer',
+                    'email' => $user->email ?? '',
+                ],
+                'enabled_payments' => $enabled_payments,
+                'credit_card' => [
+                    'secure' => true,
+                    'channel' => 'migs',
+                ],
+            ];
 
+            // Generate Snap Token
+            $snap_token = Midtrans\Snap::getSnapToken($payment_data);
+            Log::info('Midtrans Snap Token Created:', ['snap_token' => $snap_token]);
 
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'snap_token' => $snap_token,
+                    'redirect_url' => Midtrans\Config::$isProduction
+                        ? 'https://app.midtrans.com/snap/v2/vtweb/' . $snap_token
+                        : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snap_token,
+                    'transaction_id' => $transaction->id,
+                    'order_id' => $order_id
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Midtrans Payment Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Payment initialization failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function snapView($transactionId)
+    {
+        try {
+            // Pastikan user login
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            // Cari transaksi berdasarkan ID
+            $transaction = Transaction::find($transactionId);
+            if (!$transaction) {
+                return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
+            }
+
+            // Pastikan total pembayaran valid
+            $total_payable = (int) round($transaction->final_total);
+            if ($total_payable <= 0) {
+                return response()->json(['success' => false, 'message' => 'Invalid transaction amount'], 400);
+            }
+
+            // Order ID unik berdasarkan ID transaksi
+            $order_id = 'ORDER-' . $transaction->id;
+
+            // Metode pembayaran yang tersedia
+            $enabled_payments = [
+                'credit_card', 'bca_va', 'bni_va', 'bri_va',
+                'mandiri_va', 'permata_va', 'gopay', 'shopeepay'
+            ];
+
+            // Persiapan data untuk Midtrans
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $order_id,
+                    'gross_amount' => $total_payable,
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name ?? 'Customer',
+                    'email' => $user->email ?? '',
+                ],
+                'enabled_payments' => $enabled_payments,
+                'credit_card' => [
+                    'secure' => true,
+                    'channel' => 'migs',
+                ],
+            ];
+
+            // Generate Snap Token
+            $snapToken = Midtrans\Snap::getSnapToken($params);
+            Log::info('Midtrans Snap Token Created:', ['snap_token' => $snapToken]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'snap_token' => $snapToken,
+                    'transaction' => $transaction,
+                    'redirect_url' => Midtrans\Config::$isProduction
+                        ? 'https://app.midtrans.com/snap/v2/vtweb/' . $snapToken
+                        : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snapToken,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Midtrans Snap View Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load payment data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function index()
     {
@@ -323,7 +322,7 @@ class SellPosController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(Request $request)
     {
         $business_id = request()->session()->get('user.business_id');
 
@@ -414,6 +413,9 @@ class SellPosController extends Controller
 
         $default_datetime = $this->businessUtil->format_date('now', true);
 
+        $is_direct_sale = $request->has('is_direct_sale') ? $request->input('is_direct_sale') : false;
+
+
         $featured_products = !empty($default_location) ? $default_location->getFeaturedProducts() : [];
 
         //pos screen view from module
@@ -434,6 +436,7 @@ class SellPosController extends Controller
                 'edit_discount',
                 'edit_price',
                 'business_locations',
+                'is_direct_sale',
                 'bl_attributes',
                 'business_details',
                 'taxes',
@@ -473,16 +476,12 @@ class SellPosController extends Controller
      */
     public function store(Request $request)
     {
-
-        // dd($request->all());
         if (!auth()->user()->can('sell.create') && !auth()->user()->can('direct_sell.access') && !auth()->user()->can('so.create')) {
             abort(403, 'Unauthorized action.');
         }
 
-        $is_direct_sale = false;
-        if (!empty($request->input('is_direct_sale'))) {
-            $is_direct_sale = true;
-        }
+        $is_direct_sale = $request->has('is_direct_sale') ? $request->input('is_direct_sale') : false;
+
 
         //Check if there is a open register, if no then redirect to Create Register screen.
         if (!$is_direct_sale && $this->cashRegisterUtil->countOpenedRegister() == 0) {
@@ -490,72 +489,6 @@ class SellPosController extends Controller
         }
 
         try {
-
-            if ($request->payment[0]['method'] !== 'cash') {
-                $input = $request->except('_token');
-
-                // Validate user permissions
-                if (!auth()->user()->can('sell.create') && !auth()->user()->can('direct_sell.access') && !auth()->user()->can('so.create')) {
-                    abort(403, 'Unauthorized action.');
-                }
-
-                // Process the transaction first
-                $business_id = $request->session()->get('user.business_id');
-                $user_id = $request->session()->get('user.id');
-
-                // Calculate invoice total
-                $discount = [
-                    'discount_type' => $input['discount_type'],
-                    'discount_amount' => $input['discount_amount']
-                ];
-                $invoice_total = $this->productUtil->calculateInvoiceTotal($input['products'], $input['tax_rate_id'], $discount);
-
-                DB::beginTransaction();
-
-                // Create the transaction
-                $transaction = $this->transactionUtil->createSellTransaction($business_id, $input, $invoice_total, $user_id);
-
-                // Create or update sell lines
-                $this->transactionUtil->createOrUpdateSellLines($transaction, $input['products'], $input['location_id']);
-
-                DB::commit();
-
-                $transactionData = $this->snapView($transaction->id);
-
-                // return response()->json([
-                //     'success' => true,
-                //     'transaction' => $transactionData
-                // ]);
-
-                return redirect()->back()->with('snap_token', ['data' => $transactionData->toArray()]);
-
-                // return view('welcome');
-
-                // After successful transaction creation, redirect to Midtrans payment
-                // dd(request()->ajax(), request()->header('X-Requested-With'));
-                // $request->headers->remove('X-Requested-With');
-                // return redirect()->route('snap.view', ['transactionId' => $transaction->id], 303, ['Content-Type', 'text/html']);
-                // return response()->view('welcome')
-
-                // return redirect('/');
-                // return redirect('/');
-                // return redirect()->action($this->snapView($transaction->id));
-                
-                // return redirect()->route('snap.view', ['transactionId' => $transaction->id]);
-                return redirect()->back()->with('snap_token', json_encode(['data' => $transactionData]));
-                // session(['snap_token' => $transactionData]);
-
-
-                // return redirect()->route('snap.view', $transaction->id);
-                // return redirect('/snap-view/' . $transaction->id);
-                // return response()->redirectTo(route('snap.view', ['transactionId' => $transaction->id]));
-                // return Inertia::location(route('snap.view', ['transactionId' => $transaction->id]));
-            }
-
-
-
-
-
             $input = $request->except('_token');
 
             $input['is_quotation'] = 0;
@@ -581,8 +514,7 @@ class SellPosController extends Controller
 
             if ($is_credit_limit_exeeded !== false) {
                 $credit_limit_amount = $this->transactionUtil->num_f($is_credit_limit_exeeded, true);
-                $output = [
-                    'success' => 0,
+                $output = ['success' => 0,
                     'msg' => __('lang_v1.cutomer_credit_limit_exeeded', ['credit_limit' => $credit_limit_amount]),
                 ];
                 if (!$is_direct_sale) {
@@ -606,8 +538,7 @@ class SellPosController extends Controller
 
                 $user_id = $request->session()->get('user.id');
 
-                $discount = [
-                    'discount_type' => $input['discount_type'],
+                $discount = ['discount_type' => $input['discount_type'],
                     'discount_amount' => $input['discount_amount'],
                 ];
                 $invoice_total = $this->productUtil->calculateInvoiceTotal($input['products'], $input['tax_rate_id'], $discount);
@@ -666,20 +597,20 @@ class SellPosController extends Controller
                     $input['types_of_service_id'] = $request->input('types_of_service_id');
                     $price_group_id = !empty($request->input('types_of_service_price_group')) ? $request->input('types_of_service_price_group') : $price_group_id;
                     $input['packing_charge'] = !empty($request->input('packing_charge')) ?
-                        $this->transactionUtil->num_uf($request->input('packing_charge')) : 0;
+                    $this->transactionUtil->num_uf($request->input('packing_charge')) : 0;
                     $input['packing_charge_type'] = $request->input('packing_charge_type');
                     $input['service_custom_field_1'] = !empty($request->input('service_custom_field_1')) ?
-                        $request->input('service_custom_field_1') : null;
+                    $request->input('service_custom_field_1') : null;
                     $input['service_custom_field_2'] = !empty($request->input('service_custom_field_2')) ?
-                        $request->input('service_custom_field_2') : null;
+                    $request->input('service_custom_field_2') : null;
                     $input['service_custom_field_3'] = !empty($request->input('service_custom_field_3')) ?
-                        $request->input('service_custom_field_3') : null;
+                    $request->input('service_custom_field_3') : null;
                     $input['service_custom_field_4'] = !empty($request->input('service_custom_field_4')) ?
-                        $request->input('service_custom_field_4') : null;
+                    $request->input('service_custom_field_4') : null;
                     $input['service_custom_field_5'] = !empty($request->input('service_custom_field_5')) ?
-                        $request->input('service_custom_field_5') : null;
+                    $request->input('service_custom_field_5') : null;
                     $input['service_custom_field_6'] = !empty($request->input('service_custom_field_6')) ?
-                        $request->input('service_custom_field_6') : null;
+                    $request->input('service_custom_field_6') : null;
                 }
 
                 if ($request->input('additional_expense_value_1') != '') {
@@ -738,15 +669,6 @@ class SellPosController extends Controller
 
                 //Check for final and do some processing.
                 if ($input['status'] == 'final') {
-
-
-
-
-
-
-
-
-
                     if (!$is_direct_sale) {
                         //set service staff timer
                         foreach ($input['products'] as $product_line) {
@@ -819,8 +741,7 @@ class SellPosController extends Controller
                     $business_details = $this->businessUtil->getDetails($business_id);
                     $pos_settings = empty($business_details->pos_settings) ? $this->businessUtil->defaultPosSettings() : json_decode($business_details->pos_settings, true);
 
-                    $business = [
-                        'id' => $business_id,
+                    $business = ['id' => $business_id,
                         'accounting_method' => $request->session()->get('business.accounting_method'),
                         'location_id' => $input['location_id'],
                         'pos_settings' => $pos_settings,
@@ -886,12 +807,13 @@ class SellPosController extends Controller
                     $output['whatsapp_link'] = $whatsapp_link;
                 }
             } else {
-                $output = [
-                    'success' => 0,
+                $output = ['success' => 0,
                     'msg' => trans('messages.something_went_wrong'),
                 ];
             }
         } catch (\Exception $e) {
+
+            
             DB::rollBack();
             \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
             $msg = trans('messages.something_went_wrong');
@@ -903,11 +825,13 @@ class SellPosController extends Controller
                 $msg = $e->getMessage();
             }
 
-            $output = [
-                'success' => 0,
+            $output = ['success' => 0,
                 'msg' => $msg,
             ];
         }
+
+        $is_direct_sale = $request->has('is_direct_sale') ? $request->input('is_direct_sale') : false;
+
 
         if (!$is_direct_sale) {
             return $output;

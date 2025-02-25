@@ -1,12 +1,12 @@
 <div class="row tw-mb-1">
     @if (!empty($categories))
         <div class="@if(!empty($featured_products)) col-md-4 @else col-md-6 @endif !tw-px-2" id="product_category_div">
-            <div class="tw-dw-drawer tw-dw-drawer-end">
+            <div class="tw-dw-drawer tw-dw-drawer-end tw-px-2">
                 <input id="my-drawer-4" type="checkbox" class="tw-dw-drawer-toggle">
                 <div class="tw-dw-drawer-content">
                     <!-- Page content here -->
                     <label for="my-drawer-4"
-                        class="tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 hover:tw-from-indigo-600 hover:tw-to-blue-600 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500 focus:tw-ring-offset-2 active:tw-from-indigo-700 active:tw-to-blue-700 lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer">
+                        class="tw-bg-[#646EE4] focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500 focus:tw-ring-offset-2 active:tw-from-indigo-700 active:tw-to-blue-700 lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg"
                             class="tw-w-5 icon icon-tabler icon-tabler-category-plus" width="44" height="44"
                             viewBox="0 0 24 24" stroke-width="1.5" stroke="#ffffff" fill="none"
@@ -32,6 +32,7 @@
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <path d="M15 6l-6 6l6 6" />
                                 </svg>
+                                
                             </button>
 
                             <h3 class="tw-text-center tw-flex-grow mx-auto category_heading tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-inline-block tw-text-transparent tw-bg-clip-text tw-font-bold tw-text-base md:tw-text-2xl"
@@ -102,10 +103,10 @@
         <div class="@if(!empty($featured_products)) col-md-4 @else col-md-6 @endif !tw-px-2" id="product_brand_div">
             <div class="tw-dw-drawer tw-dw-drawer-end">
                 <input id="my-drawer-brand" type="checkbox" class="tw-dw-drawer-toggle">
-                <div class="tw-dw-drawer-content">
+                <div class="tw-dw-drawer-content tw-px-2">
                     <!-- Page content here -->
                     <label for="my-drawer-brand"
-                        class="tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 hover:tw-from-indigo-600 hover:tw-to-blue-600 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500 focus:tw-ring-offset-2 active:tw-from-indigo-700 active:tw-to-blue-700 lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer">
+                        class="tw-bg-[#646EE4] focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500 focus:tw-ring-offset-2 active:tw-from-indigo-700 active:tw-to-blue-700 lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="tw-w-5 icon icon-tabler icon-tabler-brand-beats"
                             width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ffffff"
                             fill="none" stroke-linecap="round" stroke-linejoin="round">

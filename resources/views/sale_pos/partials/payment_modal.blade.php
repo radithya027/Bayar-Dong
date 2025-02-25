@@ -1,3 +1,8 @@
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
+
+
 <div class="modal fade" tabindex="-1" role="dialog" id="modal_payment">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -11,43 +16,46 @@
                     <div class="col-md-12 mb-12">
                         <strong>@lang('lang_v1.advance_balance'):</strong> <span id="advance_balance_text"></span>
                         {!! Form::hidden('advance_balance', null, [
-                            'id' => 'advance_balance',
-                            'data-error-msg' => __('lang_v1.required_advance_balance_not_available'),
+                        'id' => 'advance_balance',
+                        'data-error-msg' => __('lang_v1.required_advance_balance_not_available'),
                         ]) !!}
                     </div>
                     <div class="col-md-9">
                         <div class="row">
                             <div id="payment_rows_div">
                                 @php
-                                    $pos_settings = !empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
-                                    $show_in_pos = '';
-                                    if ($pos_settings['enable_cash_denomination_on'] == 'all_screens' || $pos_settings['enable_cash_denomination_on'] == 'pos_screen') {
-                                        $show_in_pos = true;
-                                    }
+                                $pos_settings = !empty(session()->get('business.pos_settings')) ?
+                                json_decode(session()->get('business.pos_settings'), true) : [];
+                                $show_in_pos = '';
+                                if ($pos_settings['enable_cash_denomination_on'] == 'all_screens' ||
+                                $pos_settings['enable_cash_denomination_on'] == 'pos_screen') {
+                                $show_in_pos = true;
+                                }
                                 @endphp
                                 @foreach ($payment_lines as $payment_line)
-                                    @if ($payment_line['is_return'] == 1)
-                                        @php
-                                            $change_return = $payment_line;
-                                        @endphp
+                                @if ($payment_line['is_return'] == 1)
+                                @php
+                                $change_return = $payment_line;
+                                @endphp
 
-                                        @continue
-                                    @endif
+                                @continue
+                                @endif
 
-                                    @include('sale_pos.partials.payment_row', [
-                                        'removable' => !$loop->first,
-                                        'row_index' => $loop->index,
-                                        'payment_line' => $payment_line,
-                                        'show_denomination' => true,
-                                        'show_in_pos' => $show_in_pos,
-                                    ])
+                                @include('sale_pos.partials.payment_row', [
+                                'removable' => !$loop->first,
+                                'row_index' => $loop->index,
+                                'payment_line' => $payment_line,
+                                'show_denomination' => true,
+                                'show_in_pos' => $show_in_pos,
+                                ])
                                 @endforeach
                             </div>
                             <input type="hidden" id="payment_row_index" value="{{ count($payment_lines) }}">
                         </div>
                         <div class="row">
                             <div class="col-md-12">
-                                <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm tw-w-full"
+                                <button type="button"
+                                    class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm tw-w-full"
                                     id="add-payment-row">@lang('sale.add_payment_row')</button>
                             </div>
                         </div>
@@ -59,49 +67,56 @@
                                     <div class="box-body">
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                {!! Form::label('change_return_method', __('lang_v1.change_return_payment_method') . ':*') !!}
+                                                {!! Form::label('change_return_method',
+                                                __('lang_v1.change_return_payment_method') . ':*') !!}
                                                 <div class="input-group">
                                                     <span class="input-group-addon">
                                                         <i class="fas fa-money-bill-alt"></i>
                                                     </span>
                                                     @php
-                                                        $_payment_method = empty($change_return['method']) && array_key_exists('cash', $payment_types) ? 'cash' : $change_return['method'];
+                                                    $_payment_method = empty($change_return['method']) &&
+                                                    array_key_exists('cash', $payment_types) ? 'cash' :
+                                                    $change_return['method'];
 
-                                                        $_payment_types = $payment_types;
-                                                        if (isset($_payment_types['advance'])) {
-                                                            unset($_payment_types['advance']);
-                                                        }
+                                                    $_payment_types = $payment_types;
+                                                    if (isset($_payment_types['advance'])) {
+                                                    unset($_payment_types['advance']);
+                                                    }
                                                     @endphp
-                                                    {!! Form::select('payment[change_return][method]', $_payment_types, $_payment_method, [
-                                                        'class' => 'form-control col-md-12 payment_types_dropdown',
-                                                        'id' => 'change_return_method',
-                                                        'style' => 'width:100%;',
+                                                    {!! Form::select('payment[change_return][method]', $_payment_types,
+                                                    $_payment_method, [
+                                                    'class' => 'form-control col-md-12 payment_types_dropdown',
+                                                    'id' => 'change_return_method',
+                                                    'style' => 'width:100%;',
                                                     ]) !!}
                                                 </div>
                                             </div>
                                         </div>
                                         @if (!empty($accounts))
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    {!! Form::label('change_return_account', __('lang_v1.change_return_payment_account') . ':') !!}
-                                                    <div class="input-group">
-                                                        <span class="input-group-addon">
-                                                            <i class="fas fa-money-bill-alt"></i>
-                                                        </span>
-                                                        {!! Form::select(
-                                                            'payment[change_return][account_id]',
-                                                            $accounts,
-                                                            !empty($change_return['account_id']) ? $change_return['account_id'] : '',
-                                                            ['class' => 'form-control select2', 'id' => 'change_return_account', 'style' => 'width:100%;'],
-                                                        ) !!}
-                                                    </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                {!! Form::label('change_return_account',
+                                                __('lang_v1.change_return_payment_account') . ':') !!}
+                                                <div class="input-group">
+                                                    <span class="input-group-addon">
+                                                        <i class="fas fa-money-bill-alt"></i>
+                                                    </span>
+                                                    {!! Form::select(
+                                                    'payment[change_return][account_id]',
+                                                    $accounts,
+                                                    !empty($change_return['account_id']) ? $change_return['account_id']
+                                                    : '',
+                                                    ['class' => 'form-control select2', 'id' => 'change_return_account',
+                                                    'style' => 'width:100%;'],
+                                                    ) !!}
                                                 </div>
                                             </div>
+                                        </div>
                                         @endif
                                         <div class="clearfix"></div>
                                         @include('sale_pos.partials.payment_type_details', [
-                                            'payment_line' => $change_return,
-                                            'row_index' => 'change_return',
+                                        'payment_line' => $change_return,
+                                        'row_index' => 'change_return',
                                         ])
                                     </div>
                                 </div>
@@ -111,20 +126,22 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     {!! Form::label('sale_note', __('sale.sell_note') . ':') !!}
-                                    {!! Form::textarea('sale_note', !empty($transaction) ? $transaction->additional_notes : null, [
-                                        'class' => 'form-control',
-                                        'rows' => 3,
-                                        'placeholder' => __('sale.sell_note'),
+                                    {!! Form::textarea('sale_note', !empty($transaction) ?
+                                    $transaction->additional_notes : null, [
+                                    'class' => 'form-control',
+                                    'rows' => 3,
+                                    'placeholder' => __('sale.sell_note'),
                                     ]) !!}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     {!! Form::label('staff_note', __('sale.staff_note') . ':') !!}
-                                    {!! Form::textarea('staff_note', !empty($transaction) ? $transaction->staff_note : null, [
-                                        'class' => 'form-control',
-                                        'rows' => 3,
-                                        'placeholder' => __('sale.staff_note'),
+                                    {!! Form::textarea('staff_note', !empty($transaction) ? $transaction->staff_note :
+                                    null, [
+                                    'class' => 'form-control',
+                                    'rows' => 3,
+                                    'placeholder' => __('sale.staff_note'),
                                     ]) !!}
                                 </div>
                             </div>
@@ -168,14 +185,13 @@
                                     <br />
                                     <span class="lead text-bold change_return_span">0</span>
                                     {!! Form::hidden('change_return', $change_return['amount'], [
-                                        'class' => 'form-control change_return input_number',
-                                        'required',
-                                        'id' => 'change_return',
+                                    'class' => 'form-control change_return input_number',
+                                    'required',
+                                    'id' => 'change_return',
                                     ]) !!}
                                     <!-- <span class="lead text-bold total_quantity">0</span> -->
                                     @if (!empty($change_return['id']))
-                                        <input type="hidden" name="change_return_id"
-                                            value="{{ $change_return['id'] }}">
+                                    <input type="hidden" name="change_return_id" value="{{ $change_return['id'] }}">
                                     @endif
                                 </div>
 
@@ -197,9 +213,12 @@
                     </div>
                 </div>
             </div>
+            {{-- <button type="submit" id="pos-save">Bayarrrrr</button> --}}
             <div class="modal-footer">
-                <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">@lang('messages.close')</button>
-                <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white" id="pos-save">@lang('sale.finalize_payment')</button>
+                <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white"
+                    data-dismiss="modal">@lang('messages.close')</button>
+                <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white"
+                    id="pos-save">@lang('sale.finalize_payment')</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -222,10 +241,10 @@
                             <div class="form-group">
                                 {!! Form::label('card_number', __('lang_v1.card_no')) !!}
                                 {!! Form::text('', null, [
-                                    'class' => 'form-control',
-                                    'placeholder' => __('lang_v1.card_no'),
-                                    'id' => 'card_number',
-                                    'autofocus',
+                                'class' => 'form-control',
+                                'placeholder' => __('lang_v1.card_no'),
+                                'id' => 'card_number',
+                                'autofocus',
                                 ]) !!}
                             </div>
                         </div>
@@ -233,9 +252,9 @@
                             <div class="form-group">
                                 {!! Form::label('card_holder_name', __('lang_v1.card_holder_name')) !!}
                                 {!! Form::text('', null, [
-                                    'class' => 'form-control',
-                                    'placeholder' => __('lang_v1.card_holder_name'),
-                                    'id' => 'card_holder_name',
+                                'class' => 'form-control',
+                                'placeholder' => __('lang_v1.card_holder_name'),
+                                'id' => 'card_holder_name',
                                 ]) !!}
                             </div>
                         </div>
@@ -243,9 +262,9 @@
                             <div class="form-group">
                                 {!! Form::label('card_transaction_number', __('lang_v1.card_transaction_no')) !!}
                                 {!! Form::text('', null, [
-                                    'class' => 'form-control',
-                                    'placeholder' => __('lang_v1.card_transaction_no'),
-                                    'id' => 'card_transaction_number',
+                                'class' => 'form-control',
+                                'placeholder' => __('lang_v1.card_transaction_no'),
+                                'id' => 'card_transaction_number',
                                 ]) !!}
                             </div>
                         </div>
@@ -254,8 +273,8 @@
                             <div class="form-group">
                                 {!! Form::label('card_type', __('lang_v1.card_type')) !!}
                                 {!! Form::select('', ['visa' => 'Visa', 'master' => 'MasterCard'], 'visa', [
-                                    'class' => 'form-control select2',
-                                    'id' => 'card_type',
+                                'class' => 'form-control select2',
+                                'id' => 'card_type',
                                 ]) !!}
                             </div>
                         </div>
@@ -263,25 +282,26 @@
                             <div class="form-group">
                                 {!! Form::label('card_month', __('lang_v1.month')) !!}
                                 {!! Form::text('', null, [
-                                    'class' => 'form-control',
-                                    'placeholder' => __('lang_v1.month'),
-                                    'id' => 'card_month',
+                                'class' => 'form-control',
+                                'placeholder' => __('lang_v1.month'),
+                                'id' => 'card_month',
                                 ]) !!}
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 {!! Form::label('card_year', __('lang_v1.year')) !!}
-                                {!! Form::text('', null, ['class' => 'form-control', 'placeholder' => __('lang_v1.year'), 'id' => 'card_year']) !!}
+                                {!! Form::text('', null, ['class' => 'form-control', 'placeholder' =>
+                                __('lang_v1.year'), 'id' => 'card_year']) !!}
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 {!! Form::label('card_security', __('lang_v1.security_code')) !!}
                                 {!! Form::text('', null, [
-                                    'class' => 'form-control',
-                                    'placeholder' => __('lang_v1.security_code'),
-                                    'id' => 'card_security',
+                                'class' => 'form-control',
+                                'placeholder' => __('lang_v1.security_code'),
+                                'id' => 'card_security',
                                 ]) !!}
                             </div>
                         </div>
@@ -289,8 +309,36 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white" id="pos-save-card">@lang('sale.finalize_payment')</button>
+                <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white"
+                    id="pos-save-card">@lang('sale.finalize_payment')</button>
             </div>
         </div>
     </div>
 </div>
+
+
+{{-- <script type="text/javascript">
+    document.getElementById('pay-button').onclick = function() {
+        snap.pay("{{ $transaction->snap_token }}", {
+            onSuccess: function(result) {
+                alert("Payment successful!"); 
+                console.log(result);
+                window.location.href = "/invoice/{{ $transaction->id }}"; 
+            },
+            onPending: function(result) {
+                alert("Waiting for your payment!");
+                console.log(result);
+            },
+            onError: function(result) {
+                alert("Payment failed!");
+                console.log(result);
+            },
+            onClose: function() {
+                alert("You closed the popup without finishing the payment");
+            }
+        });
+    };
+</script> --}}
+
+{{-- @section('javascript')
+@endsection --}}
