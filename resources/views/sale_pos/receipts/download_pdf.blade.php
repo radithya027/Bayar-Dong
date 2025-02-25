@@ -1,0 +1,174 @@
+<link rel="stylesheet" href="{{ asset('css/app.css?v='.$asset_v) }}">
+<style>
+/*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
+html{
+    font-family:sans-serif;
+    -webkit-text-size-adjust:100%;
+    -ms-text-size-adjust:100%
+}
+body{
+    margin:0
+}
+table{
+    border-spacing:0;
+    border-collapse:collapse
+}
+@media print{
+    *,:after,:before{
+        color:#000!important;
+        text-shadow:none!important;
+        background:0 0!important;
+        -webkit-box-shadow:none!important;
+        box-shadow:none!important
+    }
+    thead{
+        display:table-header-group
+    }
+    img,tr{
+        page-break-inside:avoid
+    }
+    img{
+        max-width:100%!important
+    }
+    h2,h3,p{
+        orphans:3;
+        widows:3
+    }
+    h2,h3{
+        page-break-after:avoid
+    }
+    .table{
+        border-collapse:collapse!important
+    }
+    .table td,.table th{
+        background-color:#fff!important
+    }
+    .table-bordered td,.table-bordered th{
+        border:1px solid #ddd!important
+    }
+}
+body{
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:14px;
+    line-height:1.42857143;
+    color:#333;
+    background-color:#fff
+}
+img{
+    vertical-align:middle
+}
+.img-responsive{
+    display:block;
+    max-width:100%;
+    height:auto
+}
+.h1,.h2,.h3,.h4,.h5,.h6,h1,h2,h3,h4,h5,h6{
+    font-family:inherit;
+    font-weight:500;
+    line-height:1.1;
+    color:inherit
+}
+.h1,.h2,.h3,h1,h2,h3{
+    margin-top:13px;
+    margin-bottom:10px
+}
+.h4,.h5,.h6,h4,h5,h6{
+    margin-top:10px;
+    margin-bottom:10px
+}
+.h1,h1{
+    font-size:36px
+}
+.h2,h2{
+    font-size:30px
+}
+.h3,h3{
+    font-size:24px
+}
+.h4,h4{
+    font-size:18px
+}
+.h5,h5{
+    font-size:14px
+}
+.h6,h6{
+    font-size:12px
+}
+.text-left{
+    text-align:left
+}
+.text-right{
+    text-align:right
+}
+.text-center{
+    text-align:center
+}
+.center-block{
+    display:block;
+    margin-right:auto;
+    margin-left:auto
+}
+.row{
+    margin-right:-15px;
+    margin-left:-15px
+}
+.table{
+    width:100%;
+    max-width:100%;
+    margin-bottom:20px
+}
+.table>tbody>tr>td,.table>tbody>tr>th,.table>tfoot>tr>td,.table>tfoot>tr>th,.table>thead>tr>td,.table>thead>tr>th{
+    padding:8px;
+    line-height:1.42857143;
+    vertical-align:top;
+    border-top:1px solid #ddd
+}
+.table>thead>tr>th{
+    vertical-align:bottom;
+    border-bottom:2px solid #ddd
+}
+.table>tbody+tbody{
+    border-top:2px solid #ddd
+}
+.table-bordered{
+    border:1px solid #ddd
+}
+.table-bordered>tbody>tr>td,.table-bordered>tbody>tr>th,.table-bordered>tfoot>tr>td,.table-bordered>tfoot>tr>th,.table-bordered>thead>tr>td,.table-bordered>thead>tr>th{
+    border:1px solid #ddd
+}
+.table-bordered>thead>tr>td,.table-bordered>thead>tr>th{
+    border-bottom-width:2px
+}
+.table-responsive{
+    min-height:.01%;
+    overflow-x:auto
+}
+@media screen and (max-width:767px){
+    .table-responsive{
+        width:100%;
+        margin-bottom:15px;
+        overflow-y:hidden;
+        -ms-overflow-style:-ms-autohiding-scrollbar;
+        border:1px solid #ddd
+    }
+    .table-responsive>.table{
+        margin-bottom:0
+    }
+    .table-responsive>.table>tbody>tr>td,.table-responsive>.table>tbody>tr>th,.table-responsive>.table>tfoot>tr>td,.table-responsive>.table>tfoot>tr>th,.table-responsive>.table>thead>tr>td,.table-responsive>.table>thead>tr>th{
+        white-space:nowrap
+    }
+    .table-responsive>.table-bordered{
+        border:0
+    }
+    .table-responsive>.table-bordered>tbody>tr>td:first-child,.table-responsive>.table-bordered>tbody>tr>th:first-child,.table-responsive>.table-bordered>tfoot>tr>td:first-child,.table-responsive>.table-bordered>tfoot>tr>th:first-child,.table-responsive>.table-bordered>thead>tr>td:first-child,.table-responsive>.table-bordered>thead>tr>th:first-child{
+        border-left:0
+    }
+    .table-responsive>.table-bordered>tbody>tr>td:last-child,.table-responsive>.table-bordered>tbody>tr>th:last-child,.table-responsive>.table-bordered>tfoot>tr>td:last-child,.table-responsive>.table-bordered>tfoot>tr>th:last-child,.table-responsive>.table-bordered>thead>tr>td:last-child,.table-responsive>.table-bordered>thead>tr>th:last-child{
+        border-right:0
+    }
+    .table-responsive>.table-bordered>tbody>tr:last-child>td,.table-responsive>.table-bordered>tbody>tr:last-child>th,.table-responsive>.table-bordered>tfoot>tr:last-child>td,.table-responsive>.table-bordered>tfoot>tr:last-child>th{
+        border-bottom:0
+    }
+}
+</style>
+{!! $receipt['html_content'] !!}
