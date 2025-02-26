@@ -1,7 +1,5 @@
-<meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
-
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
 
 <div class="modal fade" tabindex="-1" role="dialog" id="modal_payment">
     <div class="modal-dialog modal-lg" role="document">
@@ -316,29 +314,59 @@
     </div>
 </div>
 
+{{-- <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> --}}
 
-{{-- <script type="text/javascript">
-    document.getElementById('pay-button').onclick = function() {
-        snap.pay("{{ $transaction->snap_token }}", {
-            onSuccess: function(result) {
-                alert("Payment successful!"); 
-                console.log(result);
-                window.location.href = "/invoice/{{ $transaction->id }}"; 
-            },
-            onPending: function(result) {
-                alert("Waiting for your payment!");
-                console.log(result);
-            },
-            onError: function(result) {
-                alert("Payment failed!");
-                console.log(result);
-            },
-            onClose: function() {
-                alert("You closed the popup without finishing the payment");
-            }
-        });
-    };
+
+{{-- <script>
+    // $(document).ready(function () {
+    //     $('#pos-save').on('click', function (e) {
+    //         e.preventDefault(); // Mencegah submit form sebelum pembayaran selesai
+
+    //         let transactionId = "{{ $transaction->id ?? '' }}"; // Ambil transactionId dari Blade
+
+    //         if (!transactionId) {
+    //             alert("Transaction ID tidak ditemukan.");
+    //             return;
+    //         }
+
+    //         $.ajax({
+    //             url: `/paymidtrans/${transactionId}`, // Panggil API di Laravel
+    //             type: "POST",
+    //             headers: {
+    //                 "X-CSRF-TOKEN": "{{ csrf_token() }}" // CSRF token untuk keamanan
+    //             },
+    //             success: function (response) {
+    //                 if (response.success) {
+    //                     let snapToken = response.data.snap_token;
+
+    //                     // Tampilkan Midtrans Snap modal
+    //                     snap.pay(snapToken, {
+    //                         onSuccess: function (result) {
+    //                             alert("Pembayaran berhasil!");
+    //                             console.log(result);
+    //                             $('#pos-sale-form').submit(); // Submit form setelah pembayaran sukses
+    //                         },
+    //                         onPending: function (result) {
+    //                             alert("Menunggu pembayaran.");
+    //                             console.log(result);
+    //                         },
+    //                         onError: function (result) {
+    //                             alert("Pembayaran gagal.");
+    //                             console.log(result);
+    //                         },
+    //                         onClose: function () {
+    //                             alert("Pembayaran ditutup oleh pengguna.");
+    //                         }
+    //                     });
+    //                 } else {
+    //                     alert(response.message);
+    //                 }
+    //             },
+    //             error: function (xhr) {
+    //                 alert("Terjadi kesalahan: " + xhr.responseJSON.message);
+    //             }
+    //         });
+    //     });
+    // });
 </script> --}}
-
-{{-- @section('javascript')
-@endsection --}}

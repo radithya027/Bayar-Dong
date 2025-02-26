@@ -1,6 +1,16 @@
 @extends('layouts.app')
 @section('title', __( 'sale.list_pos'))
 
+<style>
+    h1 h2 h3 h4 h5 h6 {
+        font-family: 'Poppins', sans-serif;
+    }
+    p {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+
+
 @section('content')
 
 <!-- Content Header (Page header) -->

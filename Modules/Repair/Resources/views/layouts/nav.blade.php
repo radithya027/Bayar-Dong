@@ -46,6 +46,10 @@
                     @if (auth()->user()->can('edit_repair_settings'))
                         <li @if(request()->segment(1) == 'repair' && request()->segment(2) == 'repair-settings') class="active" @endif><a href="{{action([\Modules\Repair\Http\Controllers\RepairSettingsController::class, 'index'])}}">@lang('messages.settings')</a></li>
                     @endif
+
+                    @if (auth()->user()->can('edit_repair_settings'))
+                        <li @if(request()->segment(1) == 'repair' && request()->segment(2) == 'repair-settings') class="active" @endif><a href="{{action([\Modules\Repair\Http\Controllers\RepairSettingsController::class, 'index'])}}">@lang('Download')</a></li>
+                    @endif
                 </ul>
 
             </div><!-- /.navbar-collapse -->

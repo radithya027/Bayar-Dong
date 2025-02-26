@@ -140,147 +140,129 @@ class SellPosController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function paymidtrans($transactionId)
-    {
-        try {
-            // Cari transaksi berdasarkan ID
-            $transaction = Transaction::find($transactionId);
-            if (!$transaction) {
-                return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
-            }
+{
+    try {
+        // Cari transaksi berdasarkan ID
+        $transaction = Transaction::find($transactionId);
+        if (!$transaction) {
+            return response()->json(['success' => false, 'message' => 'Transaksi tidak ditemukan'], 404);
+        }
 
-            // Pastikan user login
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
-            }
+        // Pastikan user login
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
 
-            // Pastikan total pembayaran valid
-            $total_payable = (int) round($transaction->final_total);
-            if ($total_payable <= 0) {
-                return response()->json(['success' => false, 'message' => 'Invalid transaction amount'], 400);
-            }
+        // Pastikan total pembayaran valid
+        $total_payable = (int) round($transaction->final_total);
+        if ($total_payable <= 0) {
+            return response()->json(['success' => false, 'message' => 'Invalid transaction amount'], 400);
+        }
 
-            // Order ID unik berdasarkan ID transaksi
-            $order_id = 'ORDER-' . $transaction->id;
+        // Order ID unik berdasarkan ID transaksi
+        $order_id = 'ORDER-' . $transaction->id;
 
-            // Metode pembayaran yang tersedia
-            $enabled_payments = [
-                'credit_card', 'bca_va', 'bni_va', 'bri_va',
-                'mandiri_va', 'permata_va', 'gopay', 'shopeepay'
-            ];
+        // Konfigurasi Midtrans
+        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+        \Midtrans\Config::$isProduction = false; // Ganti `true` jika sudah live
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
 
-            // Data transaksi untuk Midtrans
+        // Metode pembayaran yang tersedia
+        $enabled_payments = [
+            'credit_card', 'bca_va', 'bni_va', 'bri_va',
+            'mandiri_va', 'permata_va', 'gopay', 'shopeepay'
+        ];
+
+        // Data transaksi untuk Midtrans
+        $payment_data = [
+            'transaction_details' => [
+                'order_id' => $order_id,
+                'gross_amount' => $total_payable,
+            ],
+            'customer_details' => [
+                'first_name' => $user->name ?? 'Customer',
+                'email' => $user->email ?? '',
+            ],
+            'enabled_payments' => $enabled_payments,
+            'credit_card' => [
+                'secure' => true,
+                'channel' => 'migs',
+            ],
+        ];
+
+        // Generate Snap Token
+        $snap_token = \Midtrans\Snap::getSnapToken($payment_data);
+        Log::info('Midtrans Snap Token Created:', ['snap_token' => $snap_token]);
+
+        // Simpan snap_token di session sebelum redirect ke halaman pembayaran
+        session()->put('snap_token', $snap_token);
+        session()->put('transaction_id', $transaction->id);
+
+        // Redirect ke halaman pembayaran Snap Midtrans
+        return redirect()->route('snap.view', ['transactionId' => $transaction->id]);
+
+    } catch (\Exception $e) {
+        Log::error('Midtrans Payment Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error' => 'Payment initialization failed',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+   public function snapView($transactionId)
+{
+    try {
+        // Pastikan user login
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        // Cari transaksi berdasarkan ID
+        $transaction = Transaction::find($transactionId);
+        if (!$transaction) {
+            return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
+        }
+
+        // Ambil snap_token dari sesi
+        $snap_token = session('snap_token');
+
+        // Jika snap_token tidak tersedia di sesi, buat ulang
+        if (!$snap_token) {
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = false;
+            \Midtrans\Config::$isSanitized = true;
+            \Midtrans\Config::$is3ds = true;
+
             $payment_data = [
                 'transaction_details' => [
-                    'order_id' => $order_id,
-                    'gross_amount' => $total_payable,
+                    'order_id' => 'ORDER-' . $transaction->id,
+                    'gross_amount' => (int) round($transaction->final_total),
                 ],
                 'customer_details' => [
                     'first_name' => $user->name ?? 'Customer',
                     'email' => $user->email ?? '',
                 ],
-                'enabled_payments' => $enabled_payments,
-                'credit_card' => [
-                    'secure' => true,
-                    'channel' => 'migs',
-                ],
             ];
 
-            // Generate Snap Token
-            $snap_token = Midtrans\Snap::getSnapToken($payment_data);
-            Log::info('Midtrans Snap Token Created:', ['snap_token' => $snap_token]);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'snap_token' => $snap_token,
-                    'redirect_url' => Midtrans\Config::$isProduction
-                        ? 'https://app.midtrans.com/snap/v2/vtweb/' . $snap_token
-                        : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snap_token,
-                    'transaction_id' => $transaction->id,
-                    'order_id' => $order_id
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Midtrans Payment Error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Payment initialization failed',
-                'message' => $e->getMessage()
-            ], 500);
+            $snap_token = \Midtrans\Snap::getSnapToken($payment_data);
+            session()->put('snap_token', $snap_token);
         }
+
+        return view('snap_view', compact('snap_token', 'transactionId'));
+
+    } catch (\Exception $e) {
+        Log::error('Midtrans Snap View Error: ' . $e->getMessage());
+        return back()->with('error', 'Failed to load payment data.');
     }
+}
 
-    public function snapView($transactionId)
-    {
-        try {
-            // Pastikan user login
-            $user = auth()->user();
-            if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
-            }
-
-            // Cari transaksi berdasarkan ID
-            $transaction = Transaction::find($transactionId);
-            if (!$transaction) {
-                return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
-            }
-
-            // Pastikan total pembayaran valid
-            $total_payable = (int) round($transaction->final_total);
-            if ($total_payable <= 0) {
-                return response()->json(['success' => false, 'message' => 'Invalid transaction amount'], 400);
-            }
-
-            // Order ID unik berdasarkan ID transaksi
-            $order_id = 'ORDER-' . $transaction->id;
-
-            // Metode pembayaran yang tersedia
-            $enabled_payments = [
-                'credit_card', 'bca_va', 'bni_va', 'bri_va',
-                'mandiri_va', 'permata_va', 'gopay', 'shopeepay'
-            ];
-
-            // Persiapan data untuk Midtrans
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $order_id,
-                    'gross_amount' => $total_payable,
-                ],
-                'customer_details' => [
-                    'first_name' => $user->name ?? 'Customer',
-                    'email' => $user->email ?? '',
-                ],
-                'enabled_payments' => $enabled_payments,
-                'credit_card' => [
-                    'secure' => true,
-                    'channel' => 'migs',
-                ],
-            ];
-
-            // Generate Snap Token
-            $snapToken = Midtrans\Snap::getSnapToken($params);
-            Log::info('Midtrans Snap Token Created:', ['snap_token' => $snapToken]);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'snap_token' => $snapToken,
-                    'transaction' => $transaction,
-                    'redirect_url' => Midtrans\Config::$isProduction
-                        ? 'https://app.midtrans.com/snap/v2/vtweb/' . $snapToken
-                        : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $snapToken,
-                ]
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Midtrans Snap View Error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to load payment data',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
 
     public function index()
     {
@@ -480,7 +462,7 @@ class SellPosController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $is_direct_sale = $request->has('is_direct_sale') ? $request->input('is_direct_sale') : false;
+        $is_direct_sale = $request->input('is_direct_sale', false);
 
 
         //Check if there is a open register, if no then redirect to Create Register screen.
@@ -1305,6 +1287,8 @@ class SellPosController extends Controller
      */
     public function update(Request $request, $id)
     {
+                $is_direct_sale = !empty($request->input('is_direct_sale'));
+
         if (
             !auth()->user()->can('sell.update') && !auth()->user()->can('direct_sell.access') &&
             !auth()->user()->can('so.update') && !auth()->user()->can('edit_pos_payment')

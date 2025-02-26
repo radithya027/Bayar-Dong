@@ -524,6 +524,13 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::post('/paymidtrans/{transactionId}', [SellPosController::class, 'paymidtrans'])->name('subscription.pay.midtrans');
-    Route::get('/snap-view/{transactionId}', [SellPosController::class, 'snapView'])->name('snap.view');
+    Route::post('/paymidtrans/{transactionId}', function ($transactionId) {
+        return response()->json(['message' => 'Route berhasil dipanggil', 'transactionId' => $transactionId]);
+    });
+    
 });
+
+Route::get('/snap-view/{transactionId}', [SellPosController::class, 'snapView'])->name('snap.view');
+
+
+Route::get('/pos/create/{is_direct_sale?}', [SellPosController::class, 'create'])->name('pos.create');

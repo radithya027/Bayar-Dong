@@ -2,6 +2,15 @@
 
 @section('title', __( 'user.add_user' ))
 
+<style>
+  h1 h2 h3 h4 h5 h6 {
+    font-family: 'Poppins', sans-serif;
+  } 
+  p {
+    font-family: 'Poppins', sans-serif;
+  }
+</style>
+
 @section('content')
 
 <!-- Content Header (Page header) -->

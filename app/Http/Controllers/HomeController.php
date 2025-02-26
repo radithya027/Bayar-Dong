@@ -512,14 +512,15 @@ class HomeController extends Controller
                 ],
             ],
             'legend' => [
-                'align' => 'right',
-                'verticalAlign' => 'top',
-                'floating' => true,
-                'layout' => 'vertical',
-                'padding' => 20,
+                'align' => 'left',
+                'verticalAlign' => 'bottom',
+                'floating' => false,
+                'layout' => 'horizontal',
+                'padding' => 10,
             ],
         ];
     }
+    
 
     public function getCalendar()
     {
